@@ -1,0 +1,114 @@
+//pipeline
+
+pipeline {
+
+
+  agent {
+    kubernetes {
+       yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: gh-cli
+            #image: jed.ocir.io/axnfm4jb3i73/mgmt_tools/neom-fss-github-cli-tool:v0.2.0
+            image: jed.ocir.io/axnfm4jb3i73/mgmt_tools/neom-fss-github-cli-tool:v0.2.1
+            #image: jed.ocir.io/axnfm4jb3i73/github-cli-tool:latest
+            command:
+            - cat
+            tty: true
+          - name: python
+            image: jed.ocir.io/axnfm4jb3i73/dx-jenkins-images/python:latest
+            command:
+            - cat
+            tty: true
+          - name: git
+            image: jed.ocir.io/axnfm4jb3i73/git1:latest
+            command:
+            - cat
+            tty: true
+          - name: ubuntu
+            image: jed.ocir.io/axnfm4jb3i73/ubuntu1:latest
+            command:
+            - cat
+            tty: true
+          - name: changelog
+            image: jed.ocir.io/axnfm4jb3i73/changlog1:latest
+            command:
+            - cat
+            tty: true
+          imagePullSecrets:
+          - name: viveksecret
+        '''
+    }
+  }
+
+  environment{
+    TENANCY=credentials('tenancy_ocid')
+    userpat=credentials('Veerendra_github_token')	
+    def projectName = 'neom-fss-infra-oci-mgmt'
+    NAMESPACE = "axnfm4jb3i73"
+    BUCKET_NAME = "fss-bld-mgmt-obs-mej1-terraform-infra-plans"
+    ENVIRONMENT = "bld"
+    registry = "YourDockerhubAccount/YourRepository"
+    registryCredential = 'dockerhub_id'
+    dockerImage = ''
+  }
+  
+  stages {
+    stage('Gitcheckout') {
+      steps {
+        script{
+          container('git') {
+            checkout scm
+           // (version,flag) = semverVersion()
+          }
+        }
+      }
+    }
+
+    stage('Gitcheckout') {
+      steps {
+        script{
+          container('git') {
+            checkout scm
+           // (version,flag) = semverVersion()
+          }
+        }
+      }
+    }
+  
+
+stage('Cloning our Git') {
+steps {
+git 'https://github.com/YourGithubAccount/YourGithubRepository.git'
+}
+}
+stage('Building our image') {
+steps{
+script {
+dockerImage = docker.build registry + ":$BUILD_NUMBER"
+}
+}
+}
+stage('Deploy our image') {
+steps{
+script {
+docker.withRegistry( '', registryCredential ) {
+dockerImage.push()
+}
+}
+}
+}
+stage('Cleaning up') {
+steps{
+sh "docker rmi $registry:$BUILD_NUMBER"
+}
+}
+
+
+     
+     
+     
+  }
+}
